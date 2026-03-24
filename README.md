@@ -17,7 +17,7 @@ Add the package to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/anthropics/swift-claude-agent-sdk.git", from: "0.1.0"),
+    .package(url: "https://github.com/vijaysharm/ClaudeAgentSDK.git", from: "0.1.0"),
 ]
 ```
 
@@ -27,7 +27,7 @@ Then add the dependency to your target:
 .target(
     name: "MyApp",
     dependencies: [
-        .product(name: "ClaudeAgentSDK", package: "swift-claude-agent-sdk"),
+        .product(name: "ClaudeAgentSDK", package: "ClaudeAgentSDK"),
     ]
 )
 ```
