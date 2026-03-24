@@ -1,7 +1,0 @@
-/Users/vijays/scribd/programming/swift-claude-agent-sdk/Tests/ClaudeAgentSDKTests/AnyCodableTests.swift
-/Users/vijays/scribd/programming/swift-claude-agent-sdk/Tests/ClaudeAgentSDKTests/CLIArgumentBuilderTests.swift
-/Users/vijays/scribd/programming/swift-claude-agent-sdk/Tests/ClaudeAgentSDKTests/JSONLineParserTests.swift
-/Users/vijays/scribd/programming/swift-claude-agent-sdk/Tests/ClaudeAgentSDKTests/MessageDecodingTests.swift
-/Users/vijays/scribd/programming/swift-claude-agent-sdk/Tests/ClaudeAgentSDKTests/Mocks/Fixtures.swift
-/Users/vijays/scribd/programming/swift-claude-agent-sdk/Tests/ClaudeAgentSDKTests/Mocks/MockTransport.swift
-/Users/vijays/scribd/programming/swift-claude-agent-sdk/Tests/ClaudeAgentSDKTests/QueryTests.swift
