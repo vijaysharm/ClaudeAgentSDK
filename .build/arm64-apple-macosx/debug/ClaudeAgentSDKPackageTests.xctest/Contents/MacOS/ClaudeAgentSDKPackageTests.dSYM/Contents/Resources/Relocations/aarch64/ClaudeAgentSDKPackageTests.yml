@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.xctest/Contents/MacOS/ClaudeAgentSDKPackageTests'
+relocations:     []
+...

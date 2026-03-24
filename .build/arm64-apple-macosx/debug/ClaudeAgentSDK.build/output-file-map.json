@@ -1,0 +1,187 @@
+{
+  "": {
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/master.swiftdeps"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/ClaudeAgentSDK.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ClaudeAgentSDK.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ClaudeAgentSDK.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ClaudeAgentSDK~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ClaudeAgentSDK.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ClaudeAgentSDK.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Control/ControlRequest.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlRequest.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlRequest.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlRequest~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlRequest.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlRequest.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Control/ControlResponse.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlResponse.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlResponse.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlResponse~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlResponse.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ControlResponse.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Internal/AnyCodable.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AnyCodable.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AnyCodable.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AnyCodable~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AnyCodable.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AnyCodable.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Internal/CLIArgumentBuilder.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/CLIArgumentBuilder.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/CLIArgumentBuilder.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/CLIArgumentBuilder~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/CLIArgumentBuilder.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/CLIArgumentBuilder.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKAssistantMessage.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKAssistantMessage.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKAssistantMessage.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKAssistantMessage~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKAssistantMessage.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKAssistantMessage.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKHookMessages.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKHookMessages.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKHookMessages.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKHookMessages~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKHookMessages.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKHookMessages.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKMessage.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMessage.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMessage.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMessage~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMessage.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMessage.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKMiscMessages.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMiscMessages.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMiscMessages.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMiscMessages~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMiscMessages.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKMiscMessages.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKResultMessage.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKResultMessage.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKResultMessage.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKResultMessage~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKResultMessage.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKResultMessage.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKStatusMessage.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKStatusMessage.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKStatusMessage.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKStatusMessage~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKStatusMessage.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKStatusMessage.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKSystemMessage.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKSystemMessage.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKSystemMessage.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKSystemMessage~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKSystemMessage.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKSystemMessage.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKTaskMessages.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKTaskMessages.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKTaskMessages.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKTaskMessages~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKTaskMessages.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKTaskMessages.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Messages/SDKUserMessage.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKUserMessage.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKUserMessage.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKUserMessage~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKUserMessage.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SDKUserMessage.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Options.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Options.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Options.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Options~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Options.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Options.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Query.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Query.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Query.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Query~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Query.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Query.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Transport/JSONLineParser.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/JSONLineParser.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/JSONLineParser.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/JSONLineParser~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/JSONLineParser.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/JSONLineParser.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Transport/ProcessTransport.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ProcessTransport.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ProcessTransport.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ProcessTransport~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ProcessTransport.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ProcessTransport.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Transport/Transport.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Transport.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Transport.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Transport~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Transport.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/Transport.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Types/AgentTypes.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AgentTypes.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AgentTypes.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AgentTypes~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AgentTypes.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/AgentTypes.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Types/McpServerConfig.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/McpServerConfig.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/McpServerConfig.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/McpServerConfig~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/McpServerConfig.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/McpServerConfig.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Types/ModelTypes.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ModelTypes.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ModelTypes.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ModelTypes~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ModelTypes.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ModelTypes.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Types/OutputFormat.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/OutputFormat.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/OutputFormat.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/OutputFormat~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/OutputFormat.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/OutputFormat.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Types/PermissionTypes.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/PermissionTypes.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/PermissionTypes.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/PermissionTypes~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/PermissionTypes.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/PermissionTypes.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Types/SessionTypes.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SessionTypes.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SessionTypes.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SessionTypes~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SessionTypes.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/SessionTypes.dia"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/Sources/ClaudeAgentSDK/Types/ThinkingConfig.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ThinkingConfig.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ThinkingConfig.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ThinkingConfig~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ThinkingConfig.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDK.build/ThinkingConfig.dia"
+  }
+}

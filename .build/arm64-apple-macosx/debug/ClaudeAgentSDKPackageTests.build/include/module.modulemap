@@ -1,0 +1,3 @@
+module ClaudeAgentSDKPackageTests {
+    header "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.build/include/ClaudeAgentSDKPackageTests-Swift.h"
+}

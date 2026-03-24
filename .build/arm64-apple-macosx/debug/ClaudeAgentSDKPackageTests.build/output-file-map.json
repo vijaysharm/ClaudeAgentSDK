@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.build/master.swiftdeps"
+  },
+  "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.derived/runner.swift": {
+    "dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.build/runner.d",
+    "object": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/vijays/scribd/programming/swift-claude-agent-sdk/.build/arm64-apple-macosx/debug/ClaudeAgentSDKPackageTests.build/runner.dia"
+  }
+}

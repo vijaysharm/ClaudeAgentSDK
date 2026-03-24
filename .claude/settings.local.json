@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.npmjs.com)",
+      "Read(//private/tmp/claude-agent-sdk-explore/**)",
+      "Bash(tar xzf:*)",
+      "Bash(claude -p 'say hello' --output-format json)",
+      "Read(//private/tmp/claude-agent-sdk-sample/**)",
+      "Bash(swift build:*)",
+      "Bash(swift run:*)",
+      "Bash(swift test:*)"
+    ]
+  }
+}
