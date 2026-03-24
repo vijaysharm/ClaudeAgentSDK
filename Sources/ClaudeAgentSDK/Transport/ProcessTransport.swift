@@ -23,6 +23,10 @@ final class ProcessTransport: Transport, @unchecked Sendable {
     private var _isClosed = false
     private let stderrHandler: (@Sendable (String) -> Void)?
 
+    // Eagerly created stream — readabilityHandler is set at init time
+    // so no stdout data is lost before the consumer starts iterating.
+    private let _messageStream: AsyncThrowingStream<StdoutMessage, any Error>
+
     init(
         executablePath: String,
         arguments: [String],
@@ -56,7 +60,7 @@ final class ProcessTransport: Transport, @unchecked Sendable {
 
         self.process = process
 
-        // Start stderr reading
+        // Set up stderr reading
         if let handler = stderrHandler {
             stderrPipe.fileHandleForReading.readabilityHandler = { handle in
                 let data = handle.availableData
@@ -64,6 +68,47 @@ final class ProcessTransport: Transport, @unchecked Sendable {
                 if let str = String(data: data, encoding: .utf8) {
                     handler(str)
                 }
+            }
+        }
+
+        // Set up stdout reading EAGERLY — before process.run() — so no data is lost
+        let stdoutHandle = stdoutPipe.fileHandleForReading
+        self._messageStream = AsyncThrowingStream { continuation in
+            let lineBuffer = LineBuffer()
+
+            stdoutHandle.readabilityHandler = { fileHandle in
+                let data = fileHandle.availableData
+
+                if data.isEmpty {
+                    // EOF
+                    stdoutHandle.readabilityHandler = nil
+                    if let lastLine = lineBuffer.flush() {
+                        if let message = try? JSONLineParser.parse(lastLine) {
+                            continuation.yield(message)
+                        }
+                    }
+                    continuation.finish()
+                    return
+                }
+
+                guard let chunk = String(data: data, encoding: .utf8) else { return }
+
+                let lines = lineBuffer.append(chunk)
+                for line in lines {
+                    do {
+                        if let message = try JSONLineParser.parse(line) {
+                            continuation.yield(message)
+                        }
+                    } catch {
+                        continuation.finish(throwing: error)
+                        stdoutHandle.readabilityHandler = nil
+                        return
+                    }
+                }
+            }
+
+            continuation.onTermination = { _ in
+                stdoutHandle.readabilityHandler = nil
             }
         }
 
@@ -102,66 +147,7 @@ final class ProcessTransport: Transport, @unchecked Sendable {
     }
 
     func readMessages() -> AsyncThrowingStream<StdoutMessage, any Error> {
-        let stdoutHandle = stdoutPipe.fileHandleForReading
-        let process = self.process
-
-        return AsyncThrowingStream { continuation in
-            let lineBuffer = LineBuffer()
-            let handle = stdoutHandle
-
-            // Use readabilityHandler for non-blocking reads
-            handle.readabilityHandler = { fileHandle in
-                let data = fileHandle.availableData
-
-                if data.isEmpty {
-                    // EOF — process stdout closed
-                    handle.readabilityHandler = nil
-
-                    // Flush any remaining buffered data
-                    if let lastLine = lineBuffer.flush() {
-                        if let message = try? JSONLineParser.parse(lastLine) {
-                            continuation.yield(message)
-                        }
-                    }
-
-                    continuation.finish()
-                    return
-                }
-
-                guard let chunk = String(data: data, encoding: .utf8) else { return }
-
-                let lines = lineBuffer.append(chunk)
-                for line in lines {
-                    do {
-                        if let message = try JSONLineParser.parse(line) {
-                            continuation.yield(message)
-                        }
-                    } catch {
-                        continuation.finish(throwing: error)
-                        handle.readabilityHandler = nil
-                        return
-                    }
-                }
-            }
-
-            // Also handle process termination in case stdout handler doesn't fire
-            process.terminationHandler = { _ in
-                // Give a tiny delay for any remaining stdout data to flush
-                DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
-                    handle.readabilityHandler = nil
-                    if let lastLine = lineBuffer.flush() {
-                        if let message = try? JSONLineParser.parse(lastLine) {
-                            continuation.yield(message)
-                        }
-                    }
-                    continuation.finish()
-                }
-            }
-
-            continuation.onTermination = { _ in
-                handle.readabilityHandler = nil
-            }
-        }
+        _messageStream
     }
 
     func endInput() {
@@ -174,7 +160,6 @@ private final class LineBuffer: @unchecked Sendable {
     private let lock = NSLock()
     private var leftover = ""
 
-    /// Append a chunk of text and return all complete lines.
     func append(_ chunk: String) -> [String] {
         lock.lock()
         defer { lock.unlock() }
@@ -191,7 +176,6 @@ private final class LineBuffer: @unchecked Sendable {
         }
     }
 
-    /// Flush any remaining buffered data.
     func flush() -> String? {
         lock.lock()
         defer { lock.unlock() }

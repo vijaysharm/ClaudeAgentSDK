@@ -14,6 +14,10 @@ public enum ClaudeAgentSDKError: Error, Sendable {
     case controlRequestError(String)
     /// Failed to encode data for stdin.
     case encodingError
+    /// Session initialization failed (no init message received).
+    case sessionInitFailed
+    /// A session management operation failed.
+    case sessionError(String)
 }
 
 /// A running query against the Claude Code CLI.
@@ -72,6 +76,31 @@ public final class Query: @unchecked Sendable {
             fields["model"] = .string(model)
         }
         try await sendControlRequest(subtype: "set_model", fields: fields)
+    }
+
+    // MARK: - Streaming Input
+
+    /// Send a user message to the running query.
+    ///
+    /// Only valid when the query was created with streaming input
+    /// (via `queryStreaming()` or `query(prompt: AsyncStream)`).
+    public func sendMessage(_ message: SDKUserMessage) async throws {
+        try await writeUserMessage(message)
+    }
+
+    /// Send a text message to the running query.
+    ///
+    /// Convenience wrapper that creates an `SDKUserMessage` from a string.
+    public func sendMessage(_ text: String) async throws {
+        try await writeUserMessage(.text(text))
+    }
+
+    /// Signal that no more input will be sent.
+    ///
+    /// After calling this, no more messages can be sent via `sendMessage()`.
+    /// The CLI will finish processing and the query's async sequence will complete.
+    public func endInput() {
+        transport.endInput()
     }
 
     /// Close the query and terminate the underlying process.

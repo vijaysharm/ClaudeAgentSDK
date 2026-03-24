@@ -86,7 +86,165 @@ public enum ClaudeAgentSDK {
         #endif
     }
 
+    // MARK: - Streaming Input
+
+    /// Create a streaming query where input is driven by an `AsyncStream`.
+    ///
+    /// The stream's messages are sent to the CLI as they arrive. The returned
+    /// ``Query`` yields ``SDKMessage`` values from the CLI's responses.
+    ///
+    /// - Parameters:
+    ///   - prompt: An async stream of user messages to send.
+    ///   - options: Configuration options.
+    /// - Returns: A ``Query`` that yields response messages.
+    public static func query(
+        prompt: AsyncStream<SDKUserMessage>,
+        options: Options = Options()
+    ) throws -> Query {
+        #if os(macOS)
+        let query = try createStreamingQuery(options: options)
+        Task {
+            for await message in prompt {
+                try? await query.sendMessage(message)
+            }
+            query.endInput()
+        }
+        return query
+        #else
+        throw ClaudeAgentSDKError.unsupportedPlatform
+        #endif
+    }
+
+    /// Create a streaming query where the caller manually sends messages.
+    ///
+    /// Use ``Query/sendMessage(_:)-1lbjd`` to send user messages and
+    /// ``Query/endInput()`` when done. The returned ``Query`` yields
+    /// response messages as an `AsyncSequence`.
+    ///
+    /// ```swift
+    /// let query = try ClaudeAgentSDK.queryStreaming()
+    /// try await query.sendMessage("Hello!")
+    /// for try await message in query {
+    ///     // handle messages...
+    /// }
+    /// ```
+    public static func queryStreaming(
+        options: Options = Options()
+    ) throws -> Query {
+        #if os(macOS)
+        return try createStreamingQuery(options: options)
+        #else
+        throw ClaudeAgentSDKError.unsupportedPlatform
+        #endif
+    }
+
+    // MARK: - V2 Session API
+
+    /// Create a new multi-turn conversation session.
+    ///
+    /// The session stays alive across multiple `send()`/`stream()` cycles.
+    ///
+    /// ```swift
+    /// let session = try await ClaudeAgentSDK.createSession(
+    ///     options: SessionOptions(model: "claude-sonnet-4-6")
+    /// )
+    /// try await session.send("Hello!")
+    /// for try await msg in session.stream() { ... }
+    /// session.close()
+    /// ```
+    ///
+    /// - Parameter options: Session configuration (model is required).
+    /// - Returns: An initialized ``Session``.
+    public static func createSession(
+        options: SessionOptions
+    ) throws -> Session {
+        #if os(macOS)
+        // Generate session ID upfront — the CLI won't emit an init message
+        // until it receives the first user message in stream-json input mode.
+        let sessionId = UUID().uuidString.lowercased()
+        var opts = options.toOptions()
+        opts.sessionId = sessionId
+        let query = try createStreamingQuery(options: opts)
+        return Session(sessionId: sessionId, query: query)
+        #else
+        throw ClaudeAgentSDKError.unsupportedPlatform
+        #endif
+    }
+
+    /// Resume an existing session by ID.
+    ///
+    /// - Parameters:
+    ///   - sessionId: The session ID to resume.
+    ///   - options: Session configuration.
+    /// - Returns: A resumed ``Session``.
+    public static func resumeSession(
+        _ sessionId: String,
+        options: SessionOptions
+    ) throws -> Session {
+        #if os(macOS)
+        let query = try createStreamingQuery(
+            options: options.toOptions(resumeSessionId: sessionId)
+        )
+        return Session(sessionId: sessionId, query: query)
+        #else
+        throw ClaudeAgentSDKError.unsupportedPlatform
+        #endif
+    }
+
+    /// One-shot prompt using the session protocol.
+    ///
+    /// Creates a session, sends the message, collects the result, and closes.
+    ///
+    /// - Parameters:
+    ///   - message: The prompt text.
+    ///   - options: Session configuration.
+    /// - Returns: The query result.
+    public static func prompt(
+        _ message: String,
+        options: SessionOptions
+    ) async throws -> SDKResultMessage {
+        #if os(macOS)
+        let session = try createSession(options: options)
+        defer { session.close() }
+
+        try await session.send(message)
+
+        for try await msg in session.stream() {
+            if case .result(let result) = msg {
+                return result
+            }
+        }
+
+        throw ClaudeAgentSDKError.sessionError("No result received")
+        #else
+        throw ClaudeAgentSDKError.unsupportedPlatform
+        #endif
+    }
+
     // MARK: - Internal
+
+    #if os(macOS)
+    /// Shared helper to create a streaming-mode query (stdin stays open).
+    internal static func createStreamingQuery(options: Options) throws -> Query {
+        let executablePath = resolveExecutablePath(options: options)
+        let arguments = CLIArgumentBuilder.buildArguments(
+            options: options,
+            prompt: nil,
+            isStreaming: true
+        )
+        let environment = buildEnvironment(options: options)
+
+        let transport = try ProcessTransport(
+            executablePath: executablePath,
+            arguments: arguments,
+            cwd: options.cwd,
+            environment: environment,
+            stderrHandler: options.stderr
+        )
+
+        return Query(transport: transport, canUseTool: options.canUseTool)
+    }
+    #endif
 
     #if os(macOS)
     private static func resolveExecutablePath(options: Options) -> String {
