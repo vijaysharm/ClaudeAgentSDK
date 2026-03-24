@@ -46,6 +46,7 @@ public enum McpServerConfig: Codable, Sendable {
     case stdio(McpStdioServerConfig)
     case sse(McpSSEServerConfig)
     case http(McpHttpServerConfig)
+    case sdk(McpSdkServerConfig)
 
     private enum CodingKeys: String, CodingKey {
         case type
@@ -59,6 +60,8 @@ public enum McpServerConfig: Codable, Sendable {
             self = .sse(try McpSSEServerConfig(from: decoder))
         case "http":
             self = .http(try McpHttpServerConfig(from: decoder))
+        case "sdk":
+            self = .sdk(try McpSdkServerConfig(from: decoder))
         default:
             self = .stdio(try McpStdioServerConfig(from: decoder))
         }
@@ -66,11 +69,13 @@ public enum McpServerConfig: Codable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         switch self {
-        case .stdio(let config):
+        case let .stdio(config):
             try config.encode(to: encoder)
-        case .sse(let config):
+        case let .sse(config):
             try config.encode(to: encoder)
-        case .http(let config):
+        case let .http(config):
+            try config.encode(to: encoder)
+        case let .sdk(config):
             try config.encode(to: encoder)
         }
     }

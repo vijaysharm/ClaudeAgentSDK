@@ -479,6 +479,10 @@ The SDK communicates with the Claude Code CLI by:
 | `SDKMessage` | Discriminated enum of all CLI message types |
 | `SDKResultMessage` | Success or error result |
 | `AnyCodable` | Type-erased JSON value (`Sendable`, recursive enum) |
+| `Settings` | CLI settings (permissions, model, MCP, hooks, etc.) with escape hatch |
+| `HookEvent` | 23 hook event types for intercepting execution |
+| `SdkMcpServer` | In-process MCP server with custom tool definitions |
+| `BridgeSessionHandle` | SSE-based remote session handle (alpha) |
 
 ### Concurrency
 
@@ -487,17 +491,9 @@ The library is built for Swift 6 strict concurrency:
 - All public types are `Sendable`
 - `AnyCodable` uses a recursive enum (not `Any`) for full `Sendable` conformance
 - `Query` and `Session` use `@unchecked Sendable` with internal `NSLock` synchronization
+- `SdkMcpServer` uses Swift actors for safe concurrent tool dispatch
 - Callbacks are typed as `@Sendable`
 - Zero data races under the strict concurrency checker
-
-## Future Work
-
-The following features from the TypeScript SDK are not yet ported:
-
-- **Full Settings type** — Complete settings schema
-- **Hook callback system** — Programmatic hook registration via SDK
-- **MCP SDK server creation** — In-process MCP tools
-- **Bridge API** — claude.ai bridge transport
 
 ## License
 

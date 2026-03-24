@@ -41,6 +41,8 @@ public enum ClaudeAgentSDKError: Error, Sendable {
 public final class Query: @unchecked Sendable {
     private let transport: any Transport
     private let canUseToolCallback: CanUseTool?
+    private let hookCallbacks: [HookEvent: [HookCallbackMatcher]]?
+    private let sdkMcpServers: [String: SdkMcpServer]?
     private let lock = NSLock()
     private var _isClosed = false
     private var pendingControlResponses: [String: CheckedContinuation<SDKControlResponseRaw, any Error>] = [:]
@@ -50,9 +52,16 @@ public final class Query: @unchecked Sendable {
         return e
     }()
 
-    init(transport: any Transport, canUseTool: CanUseTool?) {
+    init(
+        transport: any Transport,
+        canUseTool: CanUseTool?,
+        hooks: [HookEvent: [HookCallbackMatcher]]? = nil,
+        sdkMcpServers: [String: SdkMcpServer]? = nil
+    ) {
         self.transport = transport
         self.canUseToolCallback = canUseTool
+        self.hookCallbacks = hooks
+        self.sdkMcpServers = sdkMcpServers
     }
 
     // MARK: - Control Methods
@@ -183,13 +192,51 @@ public final class Query: @unchecked Sendable {
         try await transport.write(json + "\n")
     }
 
-    /// Handle a permission request from the CLI.
+    /// Handle a control request from the CLI.
+    private func handleControlRequest(_ request: SDKControlRequest) async {
+        switch request.request.subtype {
+        case "can_use_tool":
+            await handlePermissionRequest(request)
+        case "hook_callback":
+            await handleHookCallback(request)
+        default:
+            await sendControlResponse(requestId: request.requestId, error: "Unhandled control request: \(request.request.subtype)")
+        }
+    }
+
+    private func handleHookCallback(_ request: SDKControlRequest) async {
+        guard let hooks = hookCallbacks else {
+            let response = SDKControlResponse(requestId: request.requestId, response: ["continue": .bool(true)])
+            do {
+                let data = try encoder.encode(response)
+                if let json = String(data: data, encoding: .utf8) {
+                    try await transport.write(json + "\n")
+                }
+            } catch {}
+            return
+        }
+
+        let input = request.request.input ?? [:]
+        let result = await HookHandler.handle(
+            callbackId: request.requestId,
+            input: input,
+            toolUseId: request.request.toolUseId,
+            hooks: hooks
+        )
+
+        let response = SDKControlResponse(requestId: request.requestId, response: result)
+        do {
+            let data = try encoder.encode(response)
+            if let json = String(data: data, encoding: .utf8) {
+                try await transport.write(json + "\n")
+            }
+        } catch {}
+    }
+
     private func handlePermissionRequest(_ request: SDKControlRequest) async {
-        guard request.request.subtype == "can_use_tool",
-              let toolName = request.request.toolName,
+        guard let toolName = request.request.toolName,
               let input = request.request.input else {
-            // Send error response for unhandled request types
-            await sendControlResponse(requestId: request.requestId, error: "Unhandled control request")
+            await sendControlResponse(requestId: request.requestId, error: "Missing tool info")
             return
         }
 
@@ -304,7 +351,7 @@ extension Query: AsyncSequence {
 
                 case .controlRequest(let request):
                     // Handle permission requests asynchronously
-                    await query.handlePermissionRequest(request)
+                    await query.handleControlRequest(request)
                     continue
 
                 case .controlResponse(let response):

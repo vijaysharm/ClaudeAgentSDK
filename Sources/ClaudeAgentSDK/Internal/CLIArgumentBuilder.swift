@@ -166,6 +166,16 @@ enum CLIArgumentBuilder {
             }
         }
 
+        if let settings = options.settings {
+            let encoder = JSONEncoder()
+            encoder.keyEncodingStrategy = .convertToSnakeCase
+            if let data = try? encoder.encode(settings),
+               let json = String(data: data, encoding: .utf8) {
+                args.append("--settings")
+                args.append(json)
+            }
+        }
+
         if let settingSources = options.settingSources, !settingSources.isEmpty {
             args.append("--setting-sources")
             args.append(settingSources.map(\.rawValue).joined(separator: ","))

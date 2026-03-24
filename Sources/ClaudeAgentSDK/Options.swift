@@ -103,6 +103,9 @@ public struct Options: Sendable {
     /// Setting sources to load.
     public var settingSources: [SettingSource]?
 
+    /// Additional settings to apply (serialized as `--settings <JSON>`).
+    public var settings: Settings?
+
     /// Output format for structured responses.
     public var outputFormat: OutputFormat?
 
@@ -131,6 +134,9 @@ public struct Options: Sendable {
     public var strictMcpConfig: Bool?
 
     // MARK: - Callbacks (not serializable)
+
+    /// Hook callbacks for responding to events during execution.
+    public var hooks: [HookEvent: [HookCallbackMatcher]]?
 
     /// Permission handler for controlling tool usage.
     public var canUseTool: CanUseTool?
@@ -166,6 +172,7 @@ public struct Options: Sendable {
         debugFile: String? = nil,
         pathToClaudeCodeExecutable: String? = nil,
         settingSources: [SettingSource]? = nil,
+        settings: Settings? = nil,
         outputFormat: OutputFormat? = nil,
         fallbackModel: String? = nil,
         extraArgs: [String: String?]? = nil,
@@ -175,6 +182,7 @@ public struct Options: Sendable {
         agentProgressSummaries: Bool? = nil,
         enableFileCheckpointing: Bool? = nil,
         strictMcpConfig: Bool? = nil,
+        hooks: [HookEvent: [HookCallbackMatcher]]? = nil,
         canUseTool: CanUseTool? = nil,
         stderr: (@Sendable (String) -> Void)? = nil
     ) {
@@ -205,6 +213,7 @@ public struct Options: Sendable {
         self.debugFile = debugFile
         self.pathToClaudeCodeExecutable = pathToClaudeCodeExecutable
         self.settingSources = settingSources
+        self.settings = settings
         self.outputFormat = outputFormat
         self.fallbackModel = fallbackModel
         self.extraArgs = extraArgs
@@ -214,6 +223,7 @@ public struct Options: Sendable {
         self.agentProgressSummaries = agentProgressSummaries
         self.enableFileCheckpointing = enableFileCheckpointing
         self.strictMcpConfig = strictMcpConfig
+        self.hooks = hooks
         self.canUseTool = canUseTool
         self.stderr = stderr
     }
