@@ -44,7 +44,7 @@ let query = try ClaudeAgentSDK.query(
 
 for try await message in query {
     switch message {
-    case .result(.success(let result)):
+    case let .result(.success(result)):
         print(result.result)
     default:
         break
@@ -70,11 +70,10 @@ let query = try ClaudeAgentSDK.query(
 
 for try await message in query {
     switch message {
-    case .system(.initialize(let init)):
-        print("Session started: model=\(init.model)")
+    case let .system(.initialize(initMsg)):
+        print("Session started: model=\(initMsg.model)")
 
-    case .assistant(let msg):
-        // Extract text content from the assistant message
+    case let .assistant(msg):
         if let content = msg.message["content"]?.arrayValue {
             for block in content {
                 if let text = block["text"]?.stringValue {
@@ -83,17 +82,146 @@ for try await message in query {
             }
         }
 
-    case .result(.success(let result)):
+    case let .result(.success(result)):
         print("Done: \(result.result)")
         print("Cost: $\(result.totalCostUsd), Duration: \(result.durationMs)ms")
 
-    case .result(.error(let error)):
+    case let .result(.error(error)):
         print("Error: \(error.errors.joined(separator: ", "))")
 
     default:
         break
     }
 }
+```
+
+### Multi-turn Sessions
+
+Use the V2 Session API for multi-turn conversations where context is maintained across turns:
+
+```swift
+let session = try ClaudeAgentSDK.createSession(
+    options: SessionOptions(model: "claude-sonnet-4-6")
+)
+
+// Turn 1
+try await session.send("What is 2 + 2?")
+for try await message in session.stream() {
+    if case let .result(.success(result)) = message {
+        print(result.result) // "4"
+    }
+}
+
+// Turn 2 — context is maintained
+try await session.send("Now multiply that by 10")
+for try await message in session.stream() {
+    if case let .result(.success(result)) = message {
+        print(result.result) // "40"
+    }
+}
+
+session.close()
+```
+
+#### One-shot Prompt
+
+For single-turn queries using the session protocol:
+
+```swift
+let result = try await ClaudeAgentSDK.prompt(
+    "What is the capital of France?",
+    options: SessionOptions(model: "claude-sonnet-4-6")
+)
+
+if case let .success(r) = result {
+    print(r.result) // "Paris"
+}
+```
+
+#### Resume a Session
+
+```swift
+let session = try ClaudeAgentSDK.resumeSession(
+    "existing-session-uuid",
+    options: SessionOptions(model: "claude-sonnet-4-6")
+)
+try await session.send("Continue where we left off")
+for try await message in session.stream() { ... }
+```
+
+### Streaming Input
+
+For manual control over when messages are sent:
+
+```swift
+let query = try ClaudeAgentSDK.queryStreaming(
+    options: Options(maxTurns: 1)
+)
+
+try await query.sendMessage("What is 3 + 3?")
+query.endInput()
+
+for try await message in query {
+    if case let .result(.success(result)) = message {
+        print(result.result) // "6"
+    }
+}
+```
+
+Or drive input from an `AsyncStream`:
+
+```swift
+let (stream, continuation) = AsyncStream<SDKUserMessage>.makeStream()
+
+let query = try ClaudeAgentSDK.query(prompt: stream, options: Options())
+
+continuation.yield(SDKUserMessage.text("Hello"))
+continuation.finish()
+
+for try await message in query { ... }
+```
+
+### Session Management
+
+List, inspect, and manage saved sessions:
+
+```swift
+// List recent sessions
+let sessions = try await ClaudeAgentSDK.listSessions(
+    options: ListSessionsOptions(limit: 10)
+)
+for session in sessions {
+    print("\(session.sessionId): \(session.summary)")
+}
+
+// Get info for a specific session
+if let info = try await ClaudeAgentSDK.getSessionInfo("session-uuid") {
+    print("Title: \(info.summary)")
+    print("Last modified: \(info.lastModified)")
+}
+
+// Read conversation messages
+let messages = try await ClaudeAgentSDK.getSessionMessages(
+    "session-uuid",
+    limit: 20
+)
+for msg in messages {
+    print("[\(msg.type)] \(msg.message)")
+}
+
+// Rename a session
+try await ClaudeAgentSDK.renameSession("session-uuid", title: "My Project Review")
+
+// Tag a session
+try await ClaudeAgentSDK.tagSession("session-uuid", tag: "important")
+
+// Fork a session (branch from a specific point)
+let fork = try await ClaudeAgentSDK.forkSession(
+    "session-uuid",
+    upToMessageId: "message-uuid",
+    title: "Alternative approach"
+)
+print("Forked to: \(fork.sessionId)")
 ```
 
 ### Configuration Options
@@ -125,9 +253,8 @@ let options = Options(
     effort: .high,
 
     // Session management
-    continueSession: true,  // Resume most recent session
-    // resume: "session-uuid",  // Resume specific session
-    persistSession: false,  // Don't save to disk
+    continueSession: true,
+    persistSession: false,
 
     // Custom agents
     agent: "code-reviewer",
@@ -159,71 +286,64 @@ let options = Options(
 for try await message in query {
     switch message {
     // System events
-    case .system(.initialize(let msg)):
+    case let .system(.initialize(msg)):
         // Session initialized — model, tools, version info
         break
-    case .system(.status(let msg)):
+    case let .system(.status(msg)):
         // Status update (e.g., "compacting")
         break
-    case .system(.apiRetry(let msg)):
+    case let .system(.apiRetry(msg)):
         // API request being retried
         break
-    case .system(.taskStarted(let msg)):
+    case let .system(.taskStarted(msg)):
         // Background task started
         break
-    case .system(.taskProgress(let msg)):
+    case let .system(.taskProgress(msg)):
         // Background task progress
         break
-    case .system(.taskNotification(let msg)):
+    case let .system(.taskNotification(msg)):
         // Background task completed/failed/stopped
-        break
-    case .system(.hookStarted(let msg)),
-         .system(.hookProgress(let msg)),
-         .system(.hookResponse(let msg)):
-        // Hook execution events
         break
 
     // Assistant messages
-    case .assistant(let msg):
+    case let .assistant(msg):
         // Claude's response (msg.message is AnyCodable — the full API response)
         break
-    case .streamEvent(let msg):
+    case let .streamEvent(msg):
         // Partial streaming event (when includePartialMessages is true)
         break
 
     // Results
-    case .result(.success(let result)):
-        // Query completed successfully
+    case let .result(.success(result)):
         // result.result — text output
         // result.totalCostUsd — cost
         // result.usage — token usage
         break
-    case .result(.error(let error)):
-        // Query failed
+    case let .result(.error(error)):
         // error.errors — error messages
         // error.subtype — "error_max_turns", "error_max_budget_usd", etc.
         break
 
     // Other events
-    case .toolProgress(let msg):
+    case let .toolProgress(msg):
         // Long-running tool progress
         break
-    case .toolUseSummary(let msg):
+    case let .toolUseSummary(msg):
         // Summary of tool executions
         break
-    case .rateLimitEvent(let msg):
+    case let .rateLimitEvent(msg):
         // Rate limit status update
         break
-    case .promptSuggestion(let msg):
+    case let .promptSuggestion(msg):
         // Suggested next prompt
         break
 
     // User messages (from session replay)
-    case .user(let msg):
+    case let .user(msg):
         break
-    case .userReplay(let msg):
+    case let .userReplay(msg):
         break
-    case .authStatus(let msg):
+    case let .authStatus(msg):
         break
     }
 }
@@ -270,6 +390,12 @@ try await query.setModel("claude-opus-4-6")
 
 // Change permission mode
 try await query.setPermissionMode(.acceptEdits)
+
+// Send additional messages (streaming mode only)
+try await query.sendMessage("Follow-up question")
+
+// Close stdin (signal no more input)
+query.endInput()
 
 // Terminate the query
 query.close()
@@ -321,7 +447,7 @@ let options = Options(
 | macOS 15+ | Yes | Yes |
 | iOS 18+ | Yes | No |
 
-On iOS, all types (`SDKMessage`, `Options`, `AnyCodable`, etc.) are fully available for use in your data layer. Calling `ClaudeAgentSDK.query()` on iOS throws `ClaudeAgentSDKError.unsupportedPlatform` since `Foundation.Process` is not available.
+On iOS, all types (`SDKMessage`, `Options`, `AnyCodable`, etc.) are fully available for use in your data layer. Calling `ClaudeAgentSDK.query()` or `ClaudeAgentSDK.createSession()` on iOS throws `ClaudeAgentSDKError.unsupportedPlatform` since `Foundation.Process` is not available.
 
 ## Architecture
 
@@ -329,7 +455,7 @@ The SDK communicates with the Claude Code CLI by:
 
 1. Spawning `claude` with `--print --output-format stream-json --verbose`
 2. Reading newline-delimited JSON from stdout
-3. Writing JSON messages to stdin (for streaming input mode)
+3. Writing JSON messages to stdin (for streaming input and sessions)
 4. Routing control requests/responses (permissions, interrupts) over the same channel
 
 ```
@@ -345,9 +471,11 @@ The SDK communicates with the Claude Code CLI by:
 
 | Type | Description |
 |------|-------------|
-| `ClaudeAgentSDK` | Entry point — `query()` function |
-| `Query` | `AsyncSequence<SDKMessage>` with control methods |
-| `Options` | Configuration (model, permissions, tools, etc.) |
+| `ClaudeAgentSDK` | Entry point — `query()`, `createSession()`, `prompt()`, session management |
+| `Query` | `AsyncSequence<SDKMessage>` with control methods and streaming input |
+| `Session` | Multi-turn conversation with `send()`/`stream()`/`close()` |
+| `Options` | Configuration for `query()` (model, permissions, tools, etc.) |
+| `SessionOptions` | Configuration for sessions (model is required) |
 | `SDKMessage` | Discriminated enum of all CLI message types |
 | `SDKResultMessage` | Success or error result |
 | `AnyCodable` | Type-erased JSON value (`Sendable`, recursive enum) |
@@ -358,21 +486,18 @@ The library is built for Swift 6 strict concurrency:
 
 - All public types are `Sendable`
 - `AnyCodable` uses a recursive enum (not `Any`) for full `Sendable` conformance
-- `Query` uses `@unchecked Sendable` with internal `NSLock` synchronization
+- `Query` and `Session` use `@unchecked Sendable` with internal `NSLock` synchronization
 - Callbacks are typed as `@Sendable`
 - Zero data races under the strict concurrency checker
 
-## Phase 2 (Planned)
+## Future Work
 
 The following features from the TypeScript SDK are not yet ported:
 
-- **V2 Session API** — `SDKSession` for multi-turn conversations
 - **Full Settings type** — Complete settings schema
-- **Hook callback system** — Programmatic hook registration
+- **Hook callback system** — Programmatic hook registration via SDK
 - **MCP SDK server creation** — In-process MCP tools
 - **Bridge API** — claude.ai bridge transport
-- **Session management** — `listSessions`, `getSessionInfo`, `renameSession`, etc.
-- **Streaming input** — `AsyncStream<SDKUserMessage>` prompt variant
 
 ## License
 
