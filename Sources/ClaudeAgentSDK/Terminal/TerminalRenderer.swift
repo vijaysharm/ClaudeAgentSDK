@@ -749,6 +749,184 @@ public actor TerminalRenderer {
     }
 }
 
+// MARK: - AgentEvent Rendering (Native Loop)
+
+extension TerminalRenderer {
+
+    /// Render a stream of ``AgentEvent`` values emitted by the native ``AgentLoop``.
+    ///
+    /// This overload provides the same rich terminal experience as the SDK message
+    /// renderer, but consumes events from the native Swift implementation that makes
+    /// direct Anthropic API calls without the `claude` binary.
+    ///
+    /// ```swift
+    /// let agent = try ClaudeAgent()
+    /// let renderer = TerminalRenderer()
+    /// try await renderer.render(agent.run("List files in the repo"))
+    /// ```
+    public nonisolated func render<S: AsyncSequence>(_ stream: S) async throws where S.Element == AgentEvent {
+        do {
+            for try await event in stream {
+                await handleAgentEvent(event)
+            }
+        } catch {
+            await finish(error: error)
+            throw error
+        }
+        await finish(error: nil)
+    }
+
+    // MARK: - AgentEvent dispatch
+
+    private func handleAgentEvent(_ event: AgentEvent) {
+        switch event {
+        case .textDelta(let text):
+            if !text.isEmpty { appendStreamingText(text) }
+
+        case .thinkingDelta(let text):
+            if !text.isEmpty { appendStreamingText(style.dim(text)) }
+
+        case .toolUseStarted(let id, let name, let input):
+            guard config.showToolRows else { return }
+            handleAgentToolStarted(id: id, name: name, input: input)
+
+        case .toolProgress(let id, let name, let elapsed):
+            guard config.showToolRows else { return }
+            handleAgentToolProgress(id: id, name: name, elapsedSeconds: elapsed)
+
+        case .toolResult(let id, let name, _, let isError, let durationMs):
+            guard config.showToolRows else { return }
+            handleAgentToolResult(id: id, name: name, isError: isError, durationMs: durationMs)
+
+        case .status(let text):
+            guard config.showStatusLines, !text.isEmpty else { return }
+            showStatusLine(text)
+
+        case .contextCompaction:
+            guard config.showCompactionNotices else { return }
+            printLine(style.gray("  ✦ Compressing context…"))
+
+        case .apiRetry(let attempt, let maxAttempts, let delaySeconds):
+            guard config.showRetryNotices else { return }
+            let delay = String(format: "%.1f", delaySeconds)
+            printLine(style.yellow("  ↻ Retrying (attempt \(attempt)/\(maxAttempts), wait \(delay)s)…"))
+
+        case .rateLimited(let resetsAt):
+            var text = "  ⏸ Rate limited"
+            if let date = resetsAt {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "HH:mm:ss"
+                text += " — resets at \(formatter.string(from: date))"
+            }
+            printLine(style.yellow(text))
+
+        case .completed(let stats):
+            ensureAtLineStart()
+            guard config.showCostSummary else { return }
+            let durationSec = Double(stats.durationMs) / 1000.0
+            var parts: [String] = []
+            if stats.estimatedCostUsd > 0 {
+                parts.append(formatCost(stats.estimatedCostUsd))
+            }
+            parts.append(formatTokens(stats.totalTokens))
+            parts.append(String(format: "%.1fs", durationSec))
+            let summary = parts.joined(separator: style.gray(" · "))
+            printLine(style.gray("  ") + style.dim(summary))
+
+        case .failed(let reason, let errors):
+            ensureAtLineStart()
+            printLine(style.boldRed("  ✗ Stopped: \(reason)"))
+            for msg in errors { printLine(style.red("    \(msg)")) }
+        }
+    }
+
+    // MARK: - Native tool row handlers
+
+    private func handleAgentToolStarted(id: String, name: String, input: [String: AnyCodable]) {
+        let displayArgs = computeDisplayArgs(toolName: name, input: input)
+
+        let state = ToolRowState(
+            toolId: id,
+            toolName: name,
+            displayArgs: displayArgs,
+            elapsedSeconds: 0,
+            isComplete: false
+        )
+        toolRowStates[id] = state
+        toolRowOrder.append(id)
+
+        if case .tool(let currentId) = liveRow, currentId != id {
+            finalizeCurrentLiveRow()
+        }
+
+        ensureAtLineStart()
+        rawWrite(formatToolRow(state: state))
+        cursorAtLineStart = false
+        liveRow = .tool(id: id)
+        liveToolId = id
+
+        startSpinner()
+    }
+
+    private func handleAgentToolProgress(id: String, name: String, elapsedSeconds: Double) {
+        if toolRowStates[id] != nil {
+            toolRowStates[id]?.elapsedSeconds = elapsedSeconds
+            if id == liveToolId, case .tool(let lid) = liveRow, lid == id,
+               let state = toolRowStates[id], !state.isComplete {
+                rawWrite(ANSI.crClear + formatToolRow(state: state))
+            }
+        } else {
+            // Received progress before started — create the row now
+            handleAgentToolStarted(id: id, name: name, input: [:])
+            toolRowStates[id]?.elapsedSeconds = elapsedSeconds
+        }
+    }
+
+    private func handleAgentToolResult(id: String, name: String, isError: Bool, durationMs: Int) {
+        if toolRowStates[id] == nil {
+            handleAgentToolStarted(id: id, name: name, input: [:])
+        }
+        toolRowStates[id]?.isComplete = true
+        toolRowStates[id]?.elapsedSeconds = Double(durationMs) / 1000.0
+
+        if id == liveToolId, case .tool(let lid) = liveRow, lid == id,
+           let state = toolRowStates[id] {
+            rawWrite(ANSI.crClear + formatToolRow(state: state) + "\n")
+            cursorAtLineStart = true
+            liveRow = .none
+            liveToolId = nil
+            stopSpinner()
+        }
+    }
+
+    // MARK: - Display arg computation from [String: AnyCodable]
+
+    private func computeDisplayArgs(toolName: String, input: [String: AnyCodable]) -> String {
+        let toolLower = toolName.lowercased()
+
+        if toolLower.contains("bash") || toolLower == "shell" || toolLower == "execute_bash" {
+            if let cmd = input["command"]?.stringValue ?? input["cmd"]?.stringValue {
+                return truncate(cmd, to: 60)
+            }
+        }
+        if toolLower.contains("web") || toolLower.contains("fetch") || toolLower.contains("search") {
+            if let url = input["url"]?.stringValue { return truncate(url, to: 60) }
+            if let q = input["query"]?.stringValue { return truncate(q, to: 50) }
+        }
+        for key in ["path", "file_path", "filename", "file", "target_file"] {
+            if let val = input[key]?.stringValue { return val }
+        }
+        for key in ["pattern", "regex", "glob", "query"] {
+            if let val = input[key]?.stringValue { return truncate(val, to: 50) }
+        }
+        if let url = input["url"]?.stringValue { return truncate(url, to: 60) }
+        for (_, val) in input {
+            if let str = val.stringValue, !str.isEmpty { return truncate(str, to: 40) }
+        }
+        return ""
+    }
+}
+
 // MARK: - ClaudeAgentSDK Convenience
 
 extension ClaudeAgentSDK {
