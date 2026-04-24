@@ -1,13 +1,14 @@
 # Claude Agent SDK for Swift
 
-A Swift Package Manager library for building Claude-powered agents in Swift. Two independent approaches are provided:
+A Swift Package Manager library for building Claude-powered agents in Swift. Three independent layers are provided:
 
-| Approach | API | Requires |
+| Layer | API | Requires |
 |---|---|---|
 | **Native** | `ClaudeAgent` | Anthropic API key |
 | **CLI wrapper** | `ClaudeAgentSDK.query()` / `Session` | `claude` binary |
+| **Claw Code ports** | `ClawAPI` / `ClawRuntime` / `ClawPlugins` / `ClawCommands` / `ClawTools` / `ClawTelemetry` / `ClawCompatHarness` / `ClawMockService` | — (library code only) |
 
-Both expose an `AsyncSequence`-based streaming API and share the same `TerminalRenderer` for a rich terminal experience.
+The first two expose an `AsyncSequence`-based streaming API and share the same `TerminalRenderer`. The **Claw Code ports** are a Swift-6 port of the non-TUI pieces of [instructkr/claude-code](https://github.com/instructkr/claude-code) — a provider-agnostic API client, multi-provider routing, permission engine, sandbox, hooks, MCP naming + lifecycle, session/compaction, plugin + command registries, a mock service, and more.
 
 ---
 
@@ -470,6 +471,347 @@ let fork = try await ClaudeAgentSDK.forkSession(
 
 ---
 
+## Claw Code Ports
+
+A Swift 6 port of the non-TUI crates from [instructkr/claude-code](https://github.com/instructkr/claude-code) (the "Claw Code" Rust reference implementation). Each namespace is independent — you can use them à la carte without adopting the native agent or CLI wrapper.
+
+| Namespace | What it covers | Rough LOC |
+|---|---|---|
+| `ClawAPI` | Provider-agnostic wire types, error classification, SSE parser, prompt-cache, Anthropic + OpenAI-compat clients, façade `ProviderClient` | ~2.3k |
+| `ClawTelemetry` | `ClientIdentity`, request profiles, analytics events, `SessionTracer`, JSONL + in-memory sinks | ~0.4k |
+| `ClawRuntime` | Bootstrap plan, sandbox types, token usage + pricing, permissions + rule matcher + enforcer, bash validation, trust resolver, recovery recipes, policy engine, summary compression, branch/git context, OAuth + PKCE, MCP naming + lifecycle, lane events, task/team/cron registries, worker boot, config loader, hook runner, file ops, session + compaction, prompt builder, LSP + SSE + remote bootstrap | ~3.6k |
+| `ClawPlugins` | Plugin manifest, definitions, registry, install records | ~0.4k |
+| `ClawCommands` | Slash-command spec table, parser, fuzzy suggestions, skills classifier | ~0.4k |
+| `ClawTools` | Tool spec manifest, global tool registry, lane-completion detector, minimal PDF text extractor | ~0.5k |
+| `ClawCompatHarness` | Upstream-TypeScript manifest extractor | ~0.2k |
+| `ClawMockService` | Deterministic scenario detection + SSE frame builder for test harnesses | ~0.2k |
+
+### ClawAPI — Multi-provider Messages API
+
+Direct-to-Anthropic (or xAI, OpenAI, DashScope) client with retry, streaming, and prompt caching. Independent of `ClaudeAgent` — you can build your own agent loop on top.
+
+```swift
+import ClaudeAgentSDK
+
+let request = ClawAPI.MessageRequest(
+    model: "claude-sonnet-4-6",
+    maxTokens: 1024,
+    messages: [.userText("Summarize the Swift Package Manager docs in 3 bullets.")],
+    system: "You are a concise tech writer."
+)
+
+let client = try ClawAPI.AnthropicClient(fromEnvironment: ProcessInfo.processInfo.environment)
+let response = try await client.sendMessage(request)
+print(response.content)  // [.text("• …"), ...]
+print(response.usage.totalTokens())
+```
+
+Streaming with `AsyncSequence`:
+
+```swift
+for try await event in client.streamMessage(request) {
+    switch event {
+    case .contentBlockDelta(let delta):
+        if case .textDelta(let t) = delta.delta { print(t, terminator: "") }
+    case .messageStop: print()
+    default: break
+    }
+}
+```
+
+Provider-agnostic façade — routes by model name, reads env vars for OpenAI / xAI / DashScope (Qwen/Kimi):
+
+```swift
+let grok = try ClawAPI.ProviderClient.forModel("grok-3")       // → xAI
+let gpt = try ClawAPI.ProviderClient.forModel("gpt-5-turbo")   // → OpenAI
+let kimi = try ClawAPI.ProviderClient.forModel("kimi-k2.5")    // → DashScope
+let response = try await grok.sendMessage(request)
+```
+
+On-disk prompt cache with FNV-1a fingerprinting and TTL:
+
+```swift
+let cache = ClawAPI.PromptCache(config: ClawAPI.PromptCacheConfig(sessionId: "my-app"))
+let client = try ClawAPI.AnthropicClient(fromEnvironment: ProcessInfo.processInfo.environment)
+    .withPromptCache(cache)
+let response = try await client.sendMessage(request)  // writes to cache
+let cached = try await client.sendMessage(request)    // cache hit (if < TTL)
+```
+
+### ClawRuntime — Permissions, Policy, Sandbox, Hooks
+
+Permission modes + rule matchers match the Rust crate's grammar (`Tool(pattern)`, `Tool(prefix:*)`):
+
+```swift
+let rules = ClawRuntime.RuntimePermissionRuleConfig(
+    allow: ["Bash(ls *)", "Read"],
+    deny: ["Bash(rm *)"],
+    ask: ["Write"]
+)
+let policy = ClawRuntime.PermissionPolicy(activeMode: .workspaceWrite)
+    .withPermissionRules(rules)
+    .withToolRequirement("Write", .workspaceWrite)
+
+switch policy.authorize(tool: "Bash", input: #"{"command":"ls -la"}"#) {
+case .allow: print("OK")
+case .deny(let reason): print("denied:", reason)
+}
+```
+
+Permission **enforcer** with quick-path classifiers for file-write and bash:
+
+```swift
+let enforcer = ClawRuntime.PermissionEnforcer(
+    ClawRuntime.PermissionPolicy(activeMode: .readOnly)
+)
+enforcer.checkFileWrite(path: "/tmp/x", workspaceRoot: "/tmp")   // .denied
+enforcer.checkBash(command: "git status")                        // .allowed (read-only whitelist)
+enforcer.checkBash(command: "rm -rf /")                          // .denied
+```
+
+Bash-command validation and classification:
+
+```swift
+switch ClawRuntime.BashValidator.validateReadOnly("rm -rf foo", mode: .readOnly) {
+case .block(let reason): print("blocked:", reason)
+case .warn(let msg): print("warning:", msg)
+case .allow: break
+}
+
+// CommandIntent.destructive, .network, .packageManagement, etc.
+let intent = ClawRuntime.BashValidator.classify("apt-get install foo")
+```
+
+Policy engine — declarative rules over `LaneContext`:
+
+```swift
+let engine = ClawRuntime.PolicyEngine(rules: [
+    ClawRuntime.PolicyRule(
+        name: "closeout-green-lanes",
+        condition: .and([.laneCompleted, .greenAt(level: 3)]),
+        action: .closeoutLane,
+        priority: 0
+    ),
+    ClawRuntime.PolicyRule(
+        name: "warn-stale-branches",
+        condition: .staleBranch,
+        action: .notify(channel: "#eng-lanes"),
+        priority: 1
+    ),
+])
+let actions = engine.evaluate(laneContext)
+```
+
+Hook runner — dispatches shell commands with JSON payload on stdin:
+
+```swift
+let runner = ClawRuntime.HookRunner(config: ClawRuntime.RuntimeHookConfig(
+    preToolUse: ["./hooks/check-secret-in-input.sh"],
+    postToolUse: ["./hooks/log-tool-use.sh"]
+))
+let result = runner.runPreToolUse(toolName: "Bash", toolInput: #"{"command":"ls"}"#)
+if result.denied { print("blocked by hook:", result.messages) }
+if let decision = result.permissionDecision { /* .allow / .deny / .ask */ }
+```
+
+Conversation session with compaction:
+
+```swift
+var session = ClawRuntime.Session(sessionId: "demo", workspaceRoot: "/repo", model: "claude-sonnet-4-6")
+session.pushUserText("Help me refactor the parser")
+session.pushMessage(.assistant([.text("Sure — here's a plan…")]))
+
+// When history gets large
+if ClawRuntime.shouldCompact(session, config: ClawRuntime.CompactionConfig()) {
+    let result = ClawRuntime.compactSession(session, config: ClawRuntime.CompactionConfig())
+    session = result.compactedSession
+    print("Compacted \(result.removedMessageCount) messages")
+}
+```
+
+Trust resolver and stale-branch check:
+
+```swift
+let resolver = ClawRuntime.TrustResolver(config: ClawRuntime.TrustConfig(
+    allowlisted: ["/Users/me/work"]
+))
+let decision = resolver.resolve(cwd: "/Users/me/work/repo", screenText: screenOutput)
+// .notRequired or .required(policy: .autoTrust / .requireApproval / .deny, events: […])
+
+switch ClawRuntime.checkBranchFreshness(branch: "feature/x", mainRef: "origin/main") {
+case .fresh: break
+case .stale(let behind, _): print("behind main by \(behind) commits")
+case .diverged(let ahead, let behind, _): print("\(ahead) ahead, \(behind) behind")
+}
+```
+
+OAuth + PKCE:
+
+```swift
+let pkce = ClawRuntime.generatePkcePair()
+let state = ClawRuntime.generateState()
+let authReq = ClawRuntime.OAuthAuthorizationRequest.fromConfig(
+    config, redirectUri: "http://localhost:8765/callback",
+    state: state, pkce: pkce
+)
+print(authReq.buildURL())  // open in browser
+// … after redirect with ?code=… &state=… …
+let callback = ClawRuntime.parseOAuthCallbackQuery(queryString)
+```
+
+Task / team / cron registries (actor-based, Sendable-safe):
+
+```swift
+let tasks = ClawRuntime.TaskRegistry()
+let task = await tasks.create(prompt: "Write the PR description", description: "docs task")
+await tasks.setStatus(task.taskId, .running)
+await tasks.appendOutput(task.taskId, "…output chunk…")
+```
+
+### ClawPlugins — Plugin Manifest + Registry
+
+```swift
+// Load a plugin's manifest from disk
+let manifest = try ClawPlugins.loadManifest(fromDirectory: "/path/to/my-plugin")
+
+// Build a registry from installed plugins
+let registry = ClawPlugins.PluginRegistry(plugins: [
+    ClawPlugins.RegisteredPlugin(
+        definition: .external(ClawPlugins.ExternalPlugin(
+            metadata: .init(
+                id: "my-plugin@external", name: manifest.name,
+                version: manifest.version, description: manifest.description,
+                kind: .external, source: "/path/to/my-plugin",
+                defaultEnabled: manifest.defaultEnabled, root: "/path/to/my-plugin"
+            ),
+            hooks: manifest.hooks, lifecycle: manifest.lifecycle, tools: []
+        )),
+        enabled: true
+    )
+])
+
+let hooks = registry.aggregatedHooks()           // merged PreToolUse / PostToolUse / …
+let tools = try registry.aggregatedTools()        // throws on duplicate names
+```
+
+### ClawCommands — Slash-command Registry
+
+Parse user input like `/compact` or `/plugins install ./my-plugin`:
+
+```swift
+switch try ClawCommands.parse("/plugins install ./my-plugin") {
+case .plugins(action: "install", target: let target):
+    print("install", target ?? "")
+case .compact: print("compact the session")
+case .help: print(ClawCommands.slashCommandSpecs())
+default: break
+}
+```
+
+Fuzzy suggestions for mistyped commands:
+
+```swift
+ClawCommands.suggestSlashCommands("/comp")    // → ["/compact", "/config"]
+ClawCommands.suggestSlashCommands("/hel")     // → ["/help"]
+```
+
+Skills dispatch (distinguishes local management from `$name` invocation):
+
+```swift
+switch ClawCommands.classifySkillsSlashCommand("coding-helper") {
+case .local: break                             // list/install/help
+case .invoke(let target): print(target)        // "$coding-helper"
+}
+```
+
+### ClawTools — Tool Manifest + PDF Extractor
+
+```swift
+// Built-in tool specs (bash, read_file, write_file, edit_file, glob_search, grep_search)
+for spec in ClawTools.mvpToolSpecs() {
+    print(spec.name, spec.requiredPermission)
+}
+
+// Global tool registry with plugin tools folded in
+let registry = try ClawTools.GlobalToolRegistry.builtin()
+    .withPluginTools(pluginTools)
+    .withEnforcer(enforcer)
+
+let result = registry.search(query: "grep", maxResults: 3)
+print(result.matches)  // ["grep_search", ...]
+
+// Normalize allowed_tools input (handles aliases: read → read_file, etc.)
+let allowed = ClawTools.GlobalToolRegistry.normalizeAllowedTools(["read, write, glob"])
+
+// PDF text extraction
+let text = try ClawToolsPdfExtract.extractText(path: "/path/to/doc.pdf")
+
+// Lane-completion detector (for agent orchestration)
+if let laneCtx = ClawTools.detectLaneCompletion(
+    output: agentOutput, testGreen: true, hasPushed: true
+) {
+    let actions = ClawTools.evaluateCompletedLane(laneCtx)
+    // → [.closeoutLane, .cleanupSession]
+}
+```
+
+### ClawTelemetry — Sinks + SessionTracer
+
+```swift
+let sink = try ClawTelemetry.JsonlTelemetrySink(path: "/var/log/claude/telemetry.jsonl")
+let tracer = ClawTelemetry.SessionTracer(sessionId: "session-123", sink: sink)
+
+tracer.recordHTTPRequestStarted(attempt: 1, method: "POST", path: "/v1/messages")
+tracer.recordHTTPRequestSucceeded(
+    attempt: 1, method: "POST", path: "/v1/messages",
+    status: 200, requestId: "req_abc"
+)
+tracer.recordAnalytics(ClawTelemetry.AnalyticsEvent(
+    namespace: "api", action: "message_usage",
+    properties: ["total_tokens": .int(1240), "cost_usd": .string("$0.0031")]
+))
+```
+
+Anthropic request profile — injects `anthropic-version`, `anthropic-beta`, `user-agent` headers and merges `extra_body` into JSON:
+
+```swift
+let profile = ClawTelemetry.AnthropicRequestProfile(
+    clientIdentity: .init(appName: "myapp", appVersion: "1.0")
+)
+let headers = profile.headerPairs()
+let body = try profile.renderJSONBody(request)
+```
+
+### ClawMockService — Test Scenario Detector
+
+Use in tests to drive deterministic responses without a real API. Transport-less — wire it into any HTTP server you like.
+
+```swift
+let request = ClawAPI.MessageRequest(
+    model: "claude-sonnet-4-6", maxTokens: 512,
+    messages: [.userText("PARITY_SCENARIO:streaming_text please")]
+)
+if let scenario = ClawMockService.detectScenario(request) {
+    let frames = ClawMockService.buildStreamFrames(for: request, scenario: scenario)
+    // ship via your HTTP mock as text/event-stream body
+}
+```
+
+### ClawCompatHarness — Extract Upstream TS Manifest
+
+Recover the canonical command/tool/bootstrap manifest from an upstream Claude Code TypeScript checkout:
+
+```swift
+if let paths = ClawCompatHarness.UpstreamPaths.fromWorkspaceDir(cwd) {
+    let manifest = try ClawCompatHarness.extractManifest(paths)
+    print(manifest.commands.entries)      // [/help, /compact, …]
+    print(manifest.tools.entries)         // [BashTool, ReadTool, …]
+    print(manifest.bootstrap.phases)      // [.cliEntry, .fastPathVersion, …]
+}
+```
+
+---
+
 ## Terminal Renderer
 
 Both paths share `TerminalRenderer`, which replicates the Claude Code CLI's visual style:
@@ -630,6 +972,147 @@ query(prompt: "…", options: options)
   TerminalRenderer  or  your for-try-await loop
 ```
 
+### Claw Code Ports — Component Map
+
+The ported namespaces are independent of `ClaudeAgent` and `ClaudeAgentSDK`. They form a layered library — each layer depends only on types from the layers below it, so you can adopt any subset.
+
+```
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                         Your Swift Application                            ║
+║                                                                           ║
+║     (build any harness — or reuse the built-in ClaudeAgent above)         ║
+╚══╤═════════════════════╤═══════════════════╤═══════════════════╤══════════╝
+   │                     │                   │                   │
+   ▼                     ▼                   ▼                   ▼
+┌────────────────┐  ┌──────────────┐  ┌────────────────┐  ┌──────────────┐
+│  ClawCommands  │  │  ClawTools   │  │  ClawPlugins   │  │ ClawCompat-  │
+│                │  │              │  │                │  │   Harness    │
+│ • SlashCommand │  │ • ToolSpec   │  │ • Manifest     │  │              │
+│ • parse(…)     │  │ • Registry   │  │ • Registry     │  │ • TS-source  │
+│ • suggestions  │  │ • PDF extract│  │ • RegisteredP. │  │   manifest   │
+│ • SkillsDisp.  │  │ • lane-      │  │ • InstallRecord│  │   extractor  │
+│                │  │   completion │  │                │  │              │
+└────┬───────────┘  └──────┬───────┘  └───────┬────────┘  └──────┬───────┘
+     │                     │                  │                  │
+     │         ┌───────────▼──────────────────▼───────┐          │
+     │         │              ClawRuntime              │          │
+     │         │                                       │          │
+     │         │  Permissions        Sandbox           │          │
+     │         │  PermissionEnforcer ContainerEnv.     │          │
+     │         │  BashValidator      Session + Compact │          │
+     │         │  PolicyEngine       Usage / Pricing   │          │
+     │         │  PromptBuilder      OAuth (PKCE)      │          │
+     │         │  HookRunner         MCP naming        │          │
+     │         │  TrustResolver      MCP lifecycle     │          │
+     │         │  FileOps            Lane events       │          │
+     │         │  ConfigLoader       Worker state      │          │
+     │         │  TaskRegistry       Recovery recipes  │          │
+     │         │  TeamRegistry       SSE parser        │          │
+     │         │  CronRegistry       Branch/git ctx    │          │
+     │         └────┬──────────────────────────────┬───┘          │
+     │              │                              │              │
+     ▼              ▼                              ▼              ▼
+┌─────────────────────────────┐          ┌───────────────────────────────┐
+│          ClawAPI            │          │        ClawTelemetry          │
+│                             │          │                               │
+│  MessageRequest / Response  │          │  ClientIdentity               │
+│  ApiError (classification)  │          │  AnthropicRequestProfile      │
+│  SseParser + StreamEvent    │          │  AnalyticsEvent               │
+│  PromptCache (FNV-1a + TTL) │          │  SessionTracer                │
+│                             │          │  JsonlTelemetrySink           │
+│  AnthropicClient  (retry)   │          │  MemoryTelemetrySink          │
+│  OpenAiCompatClient         │          └───────────────────────────────┘
+│    (xAI / OpenAI /                           ▲
+│     DashScope — translates                   │
+│     to /chat/completions)                    │  attach to
+│                                              │  record http,
+│  ProviderClient (façade)                     │  analytics,
+│    • resolveModelAlias                       │  session traces
+│    • detectProviderKind                      │
+│    • preflight                               │
+└──────────┬────────────────┬──────────────────┘
+           │                │
+    ┌──────▼─────┐   ┌──────▼──────────┐
+    │ Anthropic  │   │ OpenAI / xAI /  │
+    │    API     │   │ DashScope APIs  │
+    └────────────┘   └─────────────────┘
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│                           ClawMockService                                 │
+│                                                                           │
+│   • detectScenario(request) — finds "PARITY_SCENARIO:<name>" markers      │
+│   • buildMessageResponse / buildStreamFrames — deterministic payloads     │
+│   • transport-less: plug into a SwiftNIO / Network.framework server       │
+│     when you want over-the-wire behavior                                  │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+### Claw Code Ports — Request Flow
+
+A typical agent harness built on the ports looks like this:
+
+```
+ user prompt
+      │
+      ▼
+┌──────────────────────┐
+│  ClawCommands.parse  │──▶  /compact  → run ClawRuntime.compactSession
+└──────────┬───────────┘      /help    → render ClawCommands.specs
+           │ (not a slash command — real prompt)
+           ▼
+┌───────────────────────────┐
+│  ClawRuntime.SystemPrompt │  builds prompt: intro + bullets + env +
+│      Builder.render()     │  project context + CLAUDE.md files
+└──────────┬────────────────┘
+           │
+           ▼
+┌───────────────────────────┐
+│  ClawRuntime.HookRunner   │  PreToolUse hooks may deny/ask/rewrite input
+│  .runPreToolUse(…)        │
+└──────────┬────────────────┘
+           │ allowed
+           ▼
+┌───────────────────────────┐
+│  ClawRuntime.Permission   │  authorize(tool, input, prompter)
+│  Policy.authorize(…)      │  → .allow / .deny(reason)
+└──────────┬────────────────┘
+           │ allowed
+           ▼
+┌───────────────────────────┐
+│  ClawAPI.ProviderClient   │  detects provider by model, preflights
+│  .streamMessage(request)  │  context-window, applies retry/backoff,
+└──────────┬────────────────┘  writes into PromptCache, emits
+           │                   AsyncThrowingStream<StreamEvent>
+           ▼
+ Anthropic / OpenAI-compat
+ provider — streamed back
+ through AnthropicClient or
+ OpenAiCompatClient.StreamState
+           │
+           ▼
+┌────────────────────────────┐
+│  (your harness) execute    │
+│   tool calls, yield        │
+│   tool_result blocks,      │
+│   run PostToolUse hooks    │──▶  ClawRuntime.HookRunner
+└──────────┬─────────────────┘     .runPostToolUse(…)
+           │
+           ▼
+ loop until assistant stops
+           │
+           ▼
+┌────────────────────────────┐
+│  ClawRuntime.UsageTracker  │  aggregate tokens, estimate cost via
+│                            │  ClawRuntime.pricingForModel
+└──────────┬─────────────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│  ClawTelemetry.Session-    │  ship http + analytics + session
+│     Tracer.record(…)       │  trace records to JSONL / memory sinks
+└────────────────────────────┘
+```
+
 ### Key Types
 
 | Type | Description |
@@ -646,6 +1129,24 @@ query(prompt: "…", options: options)
 | `Options` / `SessionOptions` | Configuration for the CLI wrapper |
 | `SDKMessage` | Discriminated enum of all CLI message types |
 | `AnyCodable` | Type-erased JSON value (`Sendable`, recursive enum) |
+| `ClawAPI.ProviderClient` | Façade over Anthropic / xAI / OpenAI / DashScope |
+| `ClawAPI.AnthropicClient` | Retry + prompt-cache + SSE Anthropic client |
+| `ClawAPI.OpenAiCompatClient` | Translates Anthropic shapes ↔ `/chat/completions` |
+| `ClawAPI.MessageRequest` / `MessageResponse` | Provider-agnostic wire types |
+| `ClawAPI.StreamEvent` | Codable streaming event enum |
+| `ClawAPI.ApiError` | Retryable / context-window / auth classification |
+| `ClawAPI.PromptCache` | On-disk completion cache (actor, FNV-1a hash) |
+| `ClawRuntime.PermissionPolicy` / `PermissionEnforcer` | Rule + mode based authorization |
+| `ClawRuntime.BashValidator` | Command intent + read-only validation |
+| `ClawRuntime.PolicyEngine` | Lane-rule evaluation over `LaneContext` |
+| `ClawRuntime.HookRunner` | Shell-command hooks (PreToolUse / PostToolUse / …) |
+| `ClawRuntime.Session` / `compactSession` | Multi-turn history with auto-compaction |
+| `ClawRuntime.TaskRegistry` / `TeamRegistry` / `CronRegistry` / `WorkerRegistry` | Actor-based lifecycle registries |
+| `ClawPlugins.PluginRegistry` / `PluginManifest` | Plugin manifest + aggregated hooks/tools |
+| `ClawCommands.SlashCommand` / `parse` | Typed slash-command parser + suggestions |
+| `ClawTools.ToolSpec` / `GlobalToolRegistry` | Tool spec manifest + search |
+| `ClawTelemetry.SessionTracer` | Per-session HTTP + analytics tracer |
+| `ClawMockService.Scenario` | Deterministic test scenario detection |
 
 ### Concurrency
 
